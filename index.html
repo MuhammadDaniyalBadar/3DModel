@@ -1,72 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AR Burger Menu Demo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>AR Product View</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<!-- Model Viewer -->
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f0f;
-      color: #ffffff;
-      text-align: center;
-    }
-    header {
-      padding: 16px;
-      font-size: 20px;
-      font-weight: bold;
-      background: #111;
-    }
-    .subtitle {
-      font-size: 14px;
-      color: #cccccc;
-      margin-bottom: 10px;
-    }
-    model-viewer {
-      width: 100%;
-      height: 60vh;
-      background: #000;
-    }
-    .features {
-      font-size: 14px;
-      padding: 10px;
-      color: #bbbbbb;
-    }
-    footer {
-      font-size: 12px;
-      color: #888;
-      padding: 10px;
-    }
-    #qrcode {
-      margin: 20px auto;
-      width: 200px;
-      height: 200px;
-    }
-    a.qr-link {
-      color: #00ffff;
-      text-decoration: none;
-      font-size: 14px;
-    }
-  </style>
+<!-- QR Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  header {
+    padding: 12px;
+    font-size: 18px;
+    background: #111;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 4px;
+  }
+
+  model-viewer {
+    width: 100vw;
+    height: 65vh;
+    background: #000;
+  }
+
+  .features {
+    font-size: 13px;
+    color: #ccc;
+    padding: 10px;
+    line-height: 1.6;
+    background: #0d0d0d;
+  }
+
+  .qr-section {
+    padding: 12px;
+    background: #080808;
+  }
+
+  #qrcode {
+    margin: 10px auto;
+    width: 140px;
+    height: 140px;
+  }
+
+  footer {
+    font-size: 12px;
+    color: #888;
+    padding: 8px;
+  }
+</style>
 </head>
 
 <body>
 
-<header>
-  🍔 Classic Beef Burger
-  <div class="subtitle">See the actual size before you order</div>
+<header id="title">
+  Loading product…
+  <div class="subtitle" id="subtitle">Point your camera at a flat surface</div>
 </header>
 
-<model-viewer id="burger-viewer" src="models/jurger.glb" ar ar-modes="scene-viewer quick-look webxr" camera-controls auto-rotate scale="1 1 1" shadow-intensity="1" alt="Burger"></model-viewer>
-
-<div>
-  <button onclick="switchModel('models/jurger.glb', 'Classic Beef Burger')">Burger</button>
-  <button onclick="switchModel('models/BigBang.glb', 'Big Bang Burger')">Big Bang Burger</button>
-</div>
+<model-viewer
+  id="viewer"
+  src=""
+  ar
+  ar-modes="scene-viewer quick-look webxr"
+  camera-controls
+  auto-rotate
+  shadow-intensity="1"
+  scale="1 1 1"
+  alt="AR Product">
+</model-viewer>
 
 <div class="features">
   ✔ Real-life size preview<br>
@@ -74,31 +90,51 @@
   ✔ Actual texture
 </div>
 
-<div id="qrcode"></div>
-<p>Scan to open the AR menu on your phone</p>
-<p><a class="qr-link" href="https://MuhammadDaniyalBadar.github.io/3DModel/" target="_blank">Or click here to open the AR menu</a></p>
+<div class="qr-section">
+  <div id="qrcode"></div>
+  <div style="font-size:12px;color:#aaa;">
+    Scan on another phone to try AR
+  </div>
+</div>
 
 <footer>
-  Augmented Reality Menu Demo
+  Move your phone to detect surface • Tap AR to place
 </footer>
 
 <script>
-function switchModel(file) {
-  const viewer = document.getElementById('burger-viewer');
-  viewer.src = file;
-}
+/* Products */
+const products = {
+  burger: {
+    name: "Classic Beef Burger",
+    subtitle: "See actual size before ordering",
+    model: "models/jurger.glb"
+  },
+  bigbang: {
+    name: "Big Bang Burger",
+    subtitle: "Large size with real texture",
+    model: "models/BigBang.glb"
+  }
+};
+
+/* Load product */
+const params = new URLSearchParams(window.location.search);
+const productKey = params.get("item") || "burger";
+const product = products[productKey];
+
+document.getElementById("title").childNodes[0].nodeValue = product.name;
+document.getElementById("subtitle").innerText = product.subtitle;
+document.getElementById("viewer").src = product.model;
+
+/* Generate QR for THIS page */
+new QRCode(document.getElementById("qrcode"), {
+  text: window.location.href,
+  width: 140,
+  height: 140,
+  colorDark: "#000000",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.H
+});
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script>
-window.onload = function() {
-  new QRCode(document.getElementById("qrcode"), {
-    text: "https://MuhammadDaniyalBadar.github.io/3DModel/",
-    width: 200,
-    height: 200,
-    colorDark : "#000000",
-    colorLight : "#ffffff",
-    correctLevel : QRCode.CorrectLevel.H
-  });
-}
-</script>
+</body>
+</html>
