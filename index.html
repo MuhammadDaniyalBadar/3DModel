@@ -5,7 +5,7 @@
   <title>AR Burger Menu Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Model Viewer -->
+  
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
   <style>
@@ -42,6 +42,12 @@
       color: #888;
       padding: 10px;
     }
+
+    #qrcode {
+    margin: 20px auto;
+    width: 150px;
+    height: 150px;
+    }
   </style>
 </head>
 
@@ -52,16 +58,12 @@
   <div class="subtitle">See the actual size before you order</div>
 </header>
 
-<model-viewer
-  src="burger.glb"
-  ar
-  ar-modes="scene-viewer quick-look webxr"
-  camera-controls
-  auto-rotate
-  scale="1 1 1"
-  shadow-intensity="1"
-  alt="3D Burger AR Model">
-</model-viewer>
+<model-viewer id="burger-viewer" src="Jurger.glb" ar ar-modes="scene-viewer quick-look webxr" camera-controls auto-rotate scale="1 1 1" shadow-intensity="1" alt="Burger"></model-viewer>
+
+<div>
+  <button onclick="switchModel('Jurger.glb')">Burger</button>
+  <button onclick="switchModel('BigBang.glb')">Big Bang Burger</button>
+</div>
 
 <div class="features">
   ✔ Real-life size preview<br>
@@ -69,9 +71,29 @@
   ✔ Actual texture
 </div>
 
+<div id="qrcode"></div>
+<p>Scan to open the AR menu on your phone</p>
+
 <footer>
   Augmented Reality Menu Demo
 </footer>
 
-</body>
-</html>
+<script>
+function switchModel(file) {
+  const viewer = document.getElementById('burger-viewer');
+  viewer.src = file;
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+window.onload = function() {
+  var qrcode = new QRCode(document.getElementById("qrcode"), {
+    text: "https://username.github.io/ARModel/ar-burger.html",
+    width: 150,
+    height: 150,
+    colorDark : "#000000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+}
+</script>
