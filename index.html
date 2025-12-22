@@ -7,165 +7,92 @@
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
-    #menu {
-      position: fixed;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.95);
-      padding: 8px 14px;
-      border-radius: 14px;
-      display: flex;
-      gap: 10px;
-      z-index: 10;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    button {
-      padding: 6px 14px;
-      border-radius: 8px;
-      border: none;
-      background: #ff9800;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:active { transform: scale(0.96); }
   </style>
 </head>
 <body>
 
-<div id="menu">
-  <button onclick="switchModel('burger.glb')">Burger</button>
-  <button onclick="switchModel('BigBang.glb')">Big Bang</button>
-</div>
+<!-- Three.js core library -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+<!-- GLTF loader for 3D model -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/loaders/GLTFLoader.js"></script>
+<!-- AR button -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/webxr/ARButton.js"></script>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/loaders/GLTFLoader.js';
-import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/webxr/ARButton.js';
-
-let camera, scene, renderer;
-let reticle, controller;
-let currentModel = null;
-let loader = new GLTFLoader();
-let hitTestSource = null;
-let hitTestSourceRequested = false;
+<script>
+let scene, camera, renderer;
+let burger, controller;
+let placed = false;
 let scale = 0.2;
-let initialDistance = null;
 
-init();
-animate();
+// Initialize scene
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
 
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+// AR button
+document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true;
-  document.body.appendChild(renderer.domElement);
+// Lighting
+const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+scene.add(light);
 
-  document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+// Load burger model
+const loader = new THREE.GLTFLoader();
+loader.load('burger.glb', function(gltf) {
+    burger = gltf.scene;
+    burger.scale.set(scale, scale, scale);
+    burger.visible = false; // initially hidden until placed
+    scene.add(burger);
+}, undefined, function(error) {
+    console.error(error);
+});
 
-  // Reticle
-  const geometry = new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI / 2);
-  const material = new THREE.MeshBasicMaterial({ color: 0xff9800 });
-  reticle = new THREE.Mesh(geometry, material);
-  reticle.matrixAutoUpdate = false;
-  reticle.visible = false;
-  scene.add(reticle);
+// Controller for tap gestures
+controller = renderer.xr.getController(0);
+controller.addEventListener('select', onSelect);
+scene.add(controller);
 
-  // Controller for placing models
-  controller = renderer.xr.getController(0);
-  controller.addEventListener('select', onSelect);
-  scene.add(controller);
-
-  // Touch for pinch-to-scale
-  renderer.domElement.addEventListener('touchmove', (event) => {
-    if (event.touches.length === 2 && currentModel) {
-      const dx = event.touches[0].pageX - event.touches[1].pageX;
-      const dy = event.touches[0].pageY - event.touches[1].pageY;
-      const distance = Math.sqrt(dx*dx + dy*dy);
-      if (initialDistance !== null) {
-        const scaleFactor = distance / initialDistance;
-        currentModel.scale.set(scale * scaleFactor, scale * scaleFactor, scale * scaleFactor);
-      }
-      initialDistance = distance;
-    }
-  }, false);
-
-  renderer.domElement.addEventListener('touchend', (event) => {
-    if (event.touches.length < 2) initialDistance = null;
-  });
-
-  window.addEventListener('resize', onWindowResize);
-}
-
-function switchModel(modelPath) {
-  loader.load('models/' + modelPath, (gltf) => {
-    if (currentModel) scene.remove(currentModel);
-    currentModel = gltf.scene;
-    currentModel.scale.set(scale, scale, scale);
-    currentModel.visible = false;
-    scene.add(currentModel);
-  });
-}
-
+// Handle tap-to-place
 function onSelect() {
-  if (reticle.visible && currentModel) {
-    const clone = currentModel.clone();
-    clone.position.setFromMatrixPosition(reticle.matrix);
-    clone.quaternion.setFromRotationMatrix(reticle.matrix);
-    clone.visible = true;
-    scene.add(clone);
-  }
+    if (!placed) {
+        burger.position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+        burger.visible = true;
+        placed = true;
+    }
 }
 
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
+// Handle pinch-to-scale
+let initialDistance = null;
+renderer.domElement.addEventListener('touchmove', (event) => {
+    if (event.touches.length === 2 && placed) {
+        const dx = event.touches[0].pageX - event.touches[1].pageX;
+        const dy = event.touches[0].pageY - event.touches[1].pageY;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        if (initialDistance !== null) {
+            const scaleFactor = distance / initialDistance;
+            burger.scale.set(scale * scaleFactor, scale * scaleFactor, scale * scaleFactor);
+        }
+        initialDistance = distance;
+    }
+}, false);
 
+renderer.domElement.addEventListener('touchend', (event) => {
+    if (event.touches.length < 2) {
+        initialDistance = null;
+    }
+});
+
+// Animation loop
 function animate() {
-  renderer.setAnimationLoop(render);
+    renderer.setAnimationLoop(render);
 }
-
-function render(timestamp, frame) {
-  if (frame) {
-    const referenceSpace = renderer.xr.getReferenceSpace();
-    const session = renderer.xr.getSession();
-
-    if (!hitTestSourceRequested) {
-      session.requestReferenceSpace('viewer').then((refSpace) => {
-        session.requestHitTestSource({ space: refSpace }).then((source) => {
-          hitTestSource = source;
-        });
-      });
-
-      session.addEventListener('end', () => {
-        hitTestSourceRequested = false;
-        hitTestSource = null;
-      });
-
-      hitTestSourceRequested = true;
-    }
-
-    if (hitTestSource) {
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
-      if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        const pose = hit.getPose(referenceSpace);
-        reticle.visible = true;
-        reticle.matrix.fromArray(pose.transform.matrix);
-      } else {
-        reticle.visible = false;
-      }
-    }
-  }
-
-  renderer.render(scene, camera);
+function render() {
+    renderer.render(scene, camera);
 }
+animate();
 </script>
 
 </body>
