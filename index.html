@@ -38,6 +38,25 @@
     background: #000;
   }
 
+  .buttons {
+    padding: 10px;
+    background: #0d0d0d;
+  }
+
+  .buttons button {
+    margin: 5px;
+    padding: 8px 14px;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .buttons button:hover {
+    background: #333;
+  }
+
   .features {
     font-size: 13px;
     color: #ccc;
@@ -67,14 +86,13 @@
 
 <body>
 
-<header id="title">
-  Loading product…
+<header>
+  <div id="title">Loading product…</div>
   <div class="subtitle" id="subtitle">Point your camera at a flat surface</div>
 </header>
 
 <model-viewer
-  id="burger-viewer"
-  src="models/jurger.glb"
+  id="viewer"
   ar
   ar-modes="scene-viewer webxr quick-look"
   ar-scale="fixed"
@@ -84,19 +102,19 @@
   shadow-intensity="1"
   exposure="1"
   scale="0.7 0.7 0.7"
-  alt="Burger">
+  alt="AR Product">
 </model-viewer>
 
-
-<div>
-  <button onclick="switchModel('models/jurger.glb', 'Classic Beef Burger')">Burger</button>
-  <button onclick="switchModel('models/BigBang.glb', 'Big Bang Burger')">Big Bang Burger</button>
+<div class="buttons">
+  <button onclick="switchProduct('burger')">🍔 Burger</button>
+  <button onclick="switchProduct('bigbang')">🔥 Big Bang</button>
+  <button onclick="switchProduct('fries')">🍟 Animal Fries</button>
 </div>
 
 <div class="features">
   ✔ Real-life size preview<br>
-  ✔ Rotate & zoom<br>
-  ✔ Actual texture
+  ✔ Rotate & inspect product<br>
+  ✔ Accurate texture & scale
 </div>
 
 <div class="qr-section">
@@ -111,7 +129,7 @@
 </footer>
 
 <script>
-/* Products */
+/* PRODUCT CONFIGURATION */
 const products = {
   burger: {
     name: "Classic Beef Burger",
@@ -120,21 +138,44 @@ const products = {
   },
   bigbang: {
     name: "Big Bang Burger",
-    subtitle: "Large size with real texture",
+    subtitle: "Large size with premium texture",
     model: "models/BigBang.glb"
+  },
+  fries: {
+    name: "Animal Fries",
+    subtitle: "Crispy fries in real scale",
+    model: "models/AnimalFries.glb"
   }
 };
 
-/* Load product */
+const viewer = document.getElementById("viewer");
+const title = document.getElementById("title");
+const subtitle = document.getElementById("subtitle");
+
+/* LOAD PRODUCT */
+function loadProduct(key) {
+  const product = products[key];
+  if (!product) return;
+
+  title.innerText = product.name;
+  subtitle.innerText = product.subtitle;
+  viewer.src = product.model;
+
+  // Update URL without reload
+  history.replaceState({}, "", "?item=" + key);
+}
+
+/* BUTTON SWITCH */
+function switchProduct(key) {
+  loadProduct(key);
+}
+
+/* AUTO LOAD FROM URL */
 const params = new URLSearchParams(window.location.search);
-const productKey = params.get("item") || "burger";
-const product = products[productKey];
+const itemFromUrl = params.get("item") || "burger";
+loadProduct(itemFromUrl);
 
-document.getElementById("title").childNodes[0].nodeValue = product.name;
-document.getElementById("subtitle").innerText = product.subtitle;
-document.getElementById("viewer").src = product.model;
-
-/* Generate QR for THIS page */
+/* QR CODE */
 new QRCode(document.getElementById("qrcode"), {
   text: window.location.href,
   width: 140,
