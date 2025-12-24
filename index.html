@@ -72,7 +72,20 @@
   <div class="subtitle" id="subtitle">Point your camera at a flat surface</div>
 </header>
 
-<model-viewer id="burger-viewer" src="models/jurger.glb" ar ar-modes="scene-viewer quick-look webxr" camera-controls auto-rotate scale="1 1 1" shadow-intensity="1" alt="Burger"></model-viewer>
+<model-viewer
+  id="burger-viewer"
+  src="models/jurger.glb"
+  ar
+  ar-modes="scene-viewer webxr quick-look"
+  ar-scale="fixed"
+  ar-placement="floor"
+  camera-controls
+  disable-zoom
+  shadow-intensity="1"
+  exposure="1"
+  alt="Burger">
+</model-viewer>
+
 
 <div>
   <button onclick="switchModel('models/jurger.glb', 'Classic Beef Burger')">Burger</button>
